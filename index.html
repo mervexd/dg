@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İyi Ki Doğdun!</title>
+    <!-- Tailwind CSS & FontAwesome -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle, #1a102f 0%, #050014 100%);
+            overflow: hidden;
+        }
+        .cursive {
+            font-family: 'Great Vibes', cursive;
+        }
+        
+        /* Mektup Zarf Efektleri */
+        .envelope-wrapper {
+            perspective: 1000px;
+        }
+        .envelope {
+            position: relative;
+            background: #f4edd8;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            transition: transform 0.8s ease;
+            transform-style: preserve-3d;
+        }
+        .envelope.open {
+            transform: rotateX(-20deg) translateY(150px) scale(0.9);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.8s ease;
+        }
+
+        /* 3 Katlı Pembe Pasta */
+        .cake {
+            position: relative;
+            width: 280px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .tier {
+            background: linear-gradient(to right, #ff8da1, #ff6b8b, #d84b6b);
+            border-radius: 12px 12px 4px 4px;
+            box-shadow: inset 0 6px 0 rgba(255,255,255,0.3), 0 6px 10px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        /* Pasta Kremaları */
+        .tier::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 14px;
+            background: #fff;
+            border-radius: 12px 12px 0 0;
+            opacity: 0.8;
+        }
+        .tier-1 { width: 160px; height: 55px; z-index: 3; }
+        .tier-2 { width: 210px; height: 65px; z-index: 2; }
+        .tier-3 { width: 260px; height: 75px; z-index: 1; }
+
+        /* Mumlar ve Alev Animasyonu */
+        .candles-container {
+            position: absolute;
+            top: -15px;
+            width: 140px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        .candle {
+            width: 10px;
+            height: 45px;
+            background: linear-gradient(to right, #e0f2fe, #bae6fd, #7dd3fc);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+        }
+        .flame {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 22px;
+            background: radial-gradient(circle at bottom, #ffdb3a 20%, #ff5e00 70%);
+            border-radius: 50% 50% 20% 20% / 60% 60% 40% 40%;
+            animation: flicker 0.6s infinite alternate;
+            box-shadow: 0 0 20px #ffaa00;
+            transition: opacity 0.4s ease;
+        }
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(0.9) rotate(-2deg); }
+            100% { transform: translateX(-50%) scale(1.1) rotate(2deg); }
+        }
+        .flame.extinguished {
+            opacity: 0;
+        }
+
+        /* Bokeh / Işık Efektleri */
+        .bokeh {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(255, 107, 139, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(125, 211, 252, 0.15) 0%, transparent 40%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center relative overflow-hidden text-white">
+
+    <div class="bokeh"></div>
+
+    <!-- 1. AŞAMA: GİRİŞTEKİ MEKTUP -->
+    <div id="letter-scene" class="absolute inset-0 flex flex-col items-center justify-center z-50 px-4 transition-all duration-1000">
+        <h2 class="cursive text-4xl md:text-5xl text-pink-400 mb-8 animate-bounce text-center">Sana Bir Mesajım Var... 💌</h2>
+        
+        <div class="envelope-wrapper w-full max-w-md h-64 flex items-center justify-center">
+            <div id="envelope" class="envelope w-80 h-52 rounded-xl flex flex-col items-center justify-center cursor-pointer border-4 border-pink-300 transform hover:scale-105 transition duration-300">
+                <div class="text-gray-700 text-center p-6">
+                    <i class="fa-solid fa-envelope-open-text text-5xl text-pink-500 mb-3 animate-pulse"></i>
+                    <p class="font-semibold text-lg">Mektubu Açmak İçin Tıkla</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. AŞAMA: DOĞUM GÜNÜ EKRANI (Başta Gizli) -->
+    <div id="birthday-scene" class="hidden opacity-0 flex flex-col items-center justify-center text-center px-4 w-full max-w-2xl transition-all duration-1000 z-10">
+        
+        <!-- Üst Yazılar -->
+        <h1 class="cursive text-6xl md:text-8xl text-pink-400 drop-shadow-[0_4px_10px_rgba(255,107,139,0.5)] mb-2">İyi ki Doğdun!</h1>
+        <p class="text-xl md:text-2xl font-light text-sky-200 tracking-wide mb-8">İyi ki varsın, seni çok seviyorum! ❤️</p>
+
+        <!-- 3 Katlı Pasta Alanı -->
+        <div class="relative my-8 flex justify-center items-end h-72 cursor-pointer" id="cake-click-area">
+            <div class="cake">
+                <!-- Mumlar Konteyneri -->
+                <div class="candles-container">
+                    <div class="candle"><div class="flame"></div></div>
+                    <div class="candle"><div class="flame"></div></div>
+                    <div class="candle"><div class="flame"></div></div>
+                    <div class="candle"><div class="flame"></div></div>
+                    <div class="candle"><div class="flame"></div></div>
+                </div>
+                <!-- Katlar -->
+                <div class="tier tier-1"></div>
+                <div class="tier tier-2"></div>
+                <div class="tier tier-3"></div>
+            </div>
+        </div>
+
+        <!-- Mikrofon Durum Bilgisi ve Manuel Buton -->
+        <div class="mt-6 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-lg">
+            <p id="mic-status" class="text-sm md:text-base text-gray-300 flex items-center gap-2">
+                <i class="fa-solid fa-microphone animate-pulse text-pink-400"></i> 
+                Mikrofona güçlüce üfle veya pastaya dokunarak mumları söndür!
+            </p>
+        </div>
+        
+        <button id="blow-btn" class="mt-4 text-xs text-gray-400 underline opacity-60 hover:opacity-100 transition">
+            (Mikrofon izni yoksa mumları söndürmek için buraya tıkla)
+        </button>
+    </div>
+
+    <!-- JavaScript Mantığı -->
+    <script>
+        const envelope = document.getElementById('envelope');
+        const letterScene = document.getElementById('letter-scene');
+        const birthdayScene = document.getElementById('birthday-scene');
+        const flames = document.querySelectorAll('.flame');
+        const micStatus = document.getElementById('mic-status');
+        const blowBtn = document.getElementById('blow-btn');
+        const cakeClickArea = document.getElementById('cake-click-area');
+
+        let isExtinguished = false;
+        let pianoInterval;
+        let audioCtx;
+
+        // --- GELİŞMİŞ PİYANO MOTORU (Web Audio API) ---
+        // Gönderdiğin "Happy Birthday" melodisinin birebir piyano frekansları ve nota süreleri
+        const melody = [
+            { note: "G4", dur: 0.35 }, { note: "G4", dur: 0.15 },
+            { note: "A4", dur: 0.5 },  { note: "G4", dur: 0.5 },
+            { note: "C5", dur: 0.5 },  { note: "B4", dur: 1.0 },
+            
+            { note: "G4", dur: 0.35 }, { note: "G4", dur: 0.15 },
+            { note: "A4", dur: 0.5 },  { note: "G4", dur: 0.5 },
+            { note: "D5", dur: 0.5 },  { note: "C5", dur: 1.0 },
+            
+            { note: "G4", dur: 0.35 }, { note: "G4", dur: 0.15 },
+            { note: "G5", dur: 0.5 },  { note: "E5", dur: 0.5 },
+            { note: "C5", dur: 0.5 },  { note: "B4", dur: 0.5 }, { note: "A4", dur: 0.5 },
+            
+            { note: "F5", dur: 0.35 }, { note: "F5", dur: 0.15 },
+            { note: "E5", dur: 0.5 },  { note: "C5", dur: 0.5 },
+            { note: "D5", dur: 0.5 },  { note: "C5", dur: 1.2 }
+        ];
+
+        const noteFreqs = {
+            "G4": 392.00, "A4": 440.00, "B4": 493.88,
+            "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99
+        };
+
+        function playPianoNote(frequency, duration) {
+            if (!audioCtx || isExtinguished) return;
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            // Gerçekçi yumuşak kuyruklu piyano tınısı için üçgen dalga (triangle) formu kullanıldı
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+
+            // Piyano tuş basış hissi (Attack - Decay - Release eğrisi)
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.03); // Hızlı basış gürlüğü
+            gainNode.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + duration - 0.05); // Yumuşakça sönümlenme
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function startPianoMelody() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let noteIndex = 0;
+
+            function playNext() {
+                if (isExtinguished) return;
+                
+                const current = melody[noteIndex];
+                const freq = noteFreqs[current.note];
+                
+                playPianoNote(freq, current.dur);
+                
+                // Bir sonraki notaya geçiş bekleme süresi
+                pianoInterval = setTimeout(() => {
+                    noteIndex = (noteIndex + 1) % melody.length; // Döngüsel olarak şarkıyı başa sarar
+                    playNext();
+                }, current.dur * 1000 + 40); 
+            }
+            playNext();
+        }
+
+        // Profesyonel Alkış Ses Efekti (Mumlar söndüğünde tetiklenir)
+        function playApplauseSound() {
+            if (!audioCtx) return;
+            const bufferSize = audioCtx.sampleRate * 2.5; 
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+            const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 1000; filter.Q.value = 1.5;
+            const gain = audioCtx.createGain(); gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.3);
+            noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        // Mektuba Tıklama Olayı
+        envelope.addEventListener('click', () => {
+            envelope.classList.add('open');
+            
+            // Piyano Müziğini Tetikle
+            startPianoMelody();
+
+            // Sahne Geçişi
+            setTimeout(() => {
+                letterScene.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    letterScene.classList.add('hidden');
+                    birthdayScene.classList.remove('hidden');
+                    setTimeout(() => {
+                        birthdayScene.classList.add('opacity-100');
+                        initMicrophone();
+                    }, 50);
+                }, 1000);
+            }, 600);
+        });
+
+        // Konfeti Patlama Fonksiyonu
+        function triggerConfetti() {
+            var duration = 4 * 1000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0, y: 0.8 },
+                    colors: ['#ff6b8b', '#ff8da1', '#7dd3fc', '#ffffff']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1, y: 0.8 },
+                    colors: ['#ff6b8b', '#ff8da1', '#7dd3fc', '#ffffff']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // Mumları Söndürme Fonksiyonu
+        function extinguishCandles() {
+            if (isExtinguished) return;
+            isExtinguished = true;
+
+            // Piyano melodisini durdur ve alkış çal
+            clearTimeout(pianoInterval);
+            playApplauseSound();
+
+            flames.forEach((flame, index) => {
+                setTimeout(() => {
+                    flame.classList.add('extinguished');
+                }, index * 150);
+            });
+
+            micStatus.innerHTML = "<i class='fa-solid fa-circle-check text-green-400'></i> Muhteşem! İyi ki doğdun! 🎉";
+            triggerConfetti();
+        }
+
+        // Alternatif Tıklama ile Söndürme Güvenceleri
+        blowBtn.addEventListener('click', extinguishCandles);
+        cakeClickArea.addEventListener('click', extinguishCandles);
+
+        // Gelişmiş Mikrofon Dinleme / Üfleme Algılama Sistemi
+        async function initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                const analyser = audioCtx.createAnalyser();
+                const microphone = audioCtx.createMediaStreamSource(stream);
+                
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                
+                microphone.connect(analyser);
+                micStatus.innerHTML = "<i class='fa-solid fa-microphone text-green-400'></i> Mikrofon hazır! Şimdi mumlara doğru güçlüce üfle!";
+
+                function checkBlowing() {
+                    if (isExtinguished) return;
+
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    let sum = 0;
+                    for (let i = 0; i < bufferLength; i++) {
+                        sum += dataArray[i];
+                    }
+                    let average = sum / bufferLength;
+
+                    // Üfleme eşiği
+                    if (average > 65) { 
+                        extinguishCandles();
+                        stream.getTracks().forEach(track => track.stop());
+                        return;
+                    }
+
+                    requestAnimationFrame(checkBlowing);
+                }
+
+                checkBlowing();
+
+            } catch (err) {
+                console.warn("Mikrofon izni reddedildi veya desteklenmiyor:", err);
+                micStatus.innerHTML = "<i class='fa-solid fa-circle-info text-amber-400'></i> Mikrofon izni alınamadı. Söndürmek için PASTAYA TIKLAYABİLİRSİN. 🎂";
+            }
+        }
+    </script>
+</body>
+</html>
